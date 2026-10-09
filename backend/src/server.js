@@ -1,31 +1,24 @@
 require("dotenv").config();
 
-const express = require("express");
-const cors = require("cors");
+const { createApp } = require("./app");
 
 const { connectPostgres } = require("./config/db/postgres");
 const { connectMongoDB } = require("./config/db/mongodb");
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.get("/", (req, res) => {
-    res.json({
-        application: "Corporate Chat API",
-        status: "running",
-    });
-});
+const { getJwtConfig } = require("./config/jwt");
 
 async function startServer() {
-    try{
+    try {
+        // Falha cedo se JWT_SECRET estiver ausente (ou curto demais em produção).
+        getJwtConfig();
+
         console.log("[DATABASE] Connecting...");
 
         await connectPostgres();
         await connectMongoDB();
 
         console.log("[DATABASE] Persistence environment ready.");
+
+        const app = createApp();
 
         const PORT = process.env.PORT || 3000;
 
@@ -34,7 +27,7 @@ async function startServer() {
         });
     } catch (error) {
         console.error("[SERVER] Failed to start server:", error);
-        process.exit(1); 
+        process.exit(1);
     }
 }
 
